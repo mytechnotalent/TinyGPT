@@ -13,14 +13,13 @@ A comprehensive tutorial implementation of a GPT (Generative Pre-trained Transfo
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Mathematical Foundations](#mathematical-foundations)
-3. [Architecture Overview](#architecture-overview)
-4. [Module Deep Dive](#module-deep-dive)
-5. [Configuration](#configuration)
-6. [Building and Running](#building-and-running)
-7. [Testing](#testing)
-8. [Code Coverage](#code-coverage)
-9. [License](#license)
+2. [Architecture Overview](#architecture-overview)
+3. [Module Deep Dive](#module-deep-dive)
+4. [Configuration](#configuration)
+5. [Building and Running](#building-and-running)
+6. [Testing](#testing)
+7. [Code Coverage](#code-coverage)
+8. [License](#license)
 
 <br>
 
@@ -41,106 +40,6 @@ By studying this codebase, you will understand:
 - **Layer Normalization**: How to stabilize training
 - **Feed-Forward Networks**: Position-wise transformations
 - **Autoregressive Generation**: How language models generate text token by token
-
-<br>
-
-## Mathematical Foundations
-
-### Embedding Layer
-An embedding layer maps discrete token indices to continuous vector representations. Given a vocabulary of size $V$ and embedding dimension $d$, we maintain a weight matrix $W_e \in \mathbb{R}^{V \times d}$. For a token with index $i$, the embedding lookup is simply:
-
-$$e_i = W_e[i, :]$$
-
-This retrieves the $i$-th row of the embedding matrix, producing a $d$-dimensional vector.
-
-### Positional Embeddings
-Since transformers process all positions in parallel (unlike RNNs), we need to inject positional information. We use learned positional embeddings $W_p \in \mathbb{R}^{T \times d}$ where $T$ is the maximum sequence length (block size).
-The input to the transformer becomes:
-
-$$x_t = W_e[\text{token}_t] + W_p[t]$$
-
-### Linear Layer
-A linear (fully connected) layer computes:
-
-$$y = xW + b$$
-
-Where $x \in \mathbb{R}^{n \times d_{in}}$, $W \in \mathbb{R}^{d_{in} \times d_{out}}$, $b \in \mathbb{R}^{d_{out}}$, and $y \in \mathbb{R}^{n \times d_{out}}$.
-
-### Softmax Function
-The softmax function converts raw scores (logits) into a probability distribution:
-
-$$\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}$$
-
-For numerical stability, we subtract the maximum value before exponentiation:
-
-$$\text{softmax}(x_i) = \frac{e^{x_i - \max(x)}}{\sum_j e^{x_j - \max(x)}}$$
-
-### Layer Normalization
-Layer normalization normalizes activations across the feature dimension:
-
-$$\text{LayerNorm}(x) = \gamma \odot \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta$$
-
-Where:
-- $\mu = \frac{1}{d}\sum_{i=1}^{d} x_i$ is the mean
-- $\sigma^2 = \frac{1}{d}\sum_{i=1}^{d} (x_i - \mu)^2$ is the variance
-- $\gamma, \beta \in \mathbb{R}^d$ are learnable scale and shift parameters
-- $\epsilon = 10^{-5}$ prevents division by zero
-
-### Scaled Dot-Product Attention
-The attention mechanism is the heart of the transformer. Given queries $Q$, keys $K$, and values $V$:
-
-$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
-
-Where $d_k$ is the dimension of the keys (head size). The scaling factor $\frac{1}{\sqrt{d_k}}$ prevents the dot products from growing too large.
-
-### Causal Masking
-For autoregressive language modeling, each position can only attend to previous positions. We achieve this by setting future positions to $-\infty$ before softmax:
-
-$$\text{mask}_{ij} = \begin{cases} 0 & \text{if } j \leq i \\ -\infty & \text{if } j > i \end{cases}$$
-
-$$\text{CausalAttention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + \text{mask}\right)V$$
-
-### Multi-Head Attention
-Instead of performing a single attention function, multi-head attention runs $h$ attention heads in parallel, each with dimension $d_k = d/h$:
-
-$$\text{MultiHead}(X) = \text{Concat}(\text{head}_1, ..., \text{head}_h)W^O$$
-
-Where each head is:
-
-$$\text{head}_i = \text{Attention}(XW_i^Q, XW_i^K, XW_i^V)$$
-
-### Feed-Forward Network
-Each transformer block contains a position-wise feed-forward network:
-
-$$\text{FFN}(x) = \text{ReLU}(xW_1 + b_1)W_2 + b_2$$
-
-The hidden dimension is typically $4 \times$ the embedding dimension, allowing the network to learn complex transformations.
-
-### ReLU Activation
-The Rectified Linear Unit is defined as:
-
-$$\text{ReLU}(x) = \max(0, x)$$
-
-### Transformer Block
-A complete transformer block combines attention and feed-forward layers with residual connections and layer normalization (pre-norm architecture):
-
-$$x' = x + \text{MultiHeadAttention}(\text{LayerNorm}(x))$$
-
-$$\text{output} = x' + \text{FFN}(\text{LayerNorm}(x'))$$
-
-### Cross-Entropy Loss
-For training, we use cross-entropy loss between predicted probabilities and target tokens:
-
-$$\mathcal{L} = -\frac{1}{BT}\sum_{b=1}^{B}\sum_{t=1}^{T} \log p(y_{b,t} | x_{b,1:t})$$
-
-Where $B$ is batch size, $T$ is sequence length, and $p(y_{b,t} | x_{b,1:t})$ is the probability assigned to the correct token.
-
-### Gradient Descent
-Parameters are updated using gradient descent:
-
-$$\theta \leftarrow \theta - \eta \nabla_\theta \mathcal{L}$$
-
-Where $\eta$ is the learning rate and $\nabla_\theta \mathcal{L}$ is the gradient of the loss with respect to parameters.
 
 <br>
 
